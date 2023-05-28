@@ -1,0 +1,55 @@
+version: '3'
+
+networks:
+  pollme-network:
+    driver: bridge
+
+services:
+  mongodb:
+    container_name: poll_mongodb
+    hostname: poll_mongodb
+    image: mongo:5.0.6
+    networks:
+      - pollme-network
+    volumes:
+      - ./databse:/data/db
+    ports:
+      - 27017:27017
+
+  redis_cache:
+    container_name: redis_cache
+    hostname: redis_cache
+    image: redis:7.0.2
+    networks:
+      - pollme-network
+    ports:
+      - 6379:6379
+
+  pollme_api:
+    container_name: pollme_api
+    hostname: pollme_api
+    build:
+      dockerfile: Dockerfile
+      context: ./server
+    networks:
+      - pollme-network
+    restart: always
+    ports:
+      - 3000:3000
+    depends_on:
+      - mongodb
+
+  pollme_client:
+    container_name: pollme_client
+    hostname: pollme_client
+    build:
+      dockerfile: Dockerfile
+      context: ./client
+    networks:
+      - pollme-network
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - pollme_api
+      - redis_cache
